@@ -4,7 +4,7 @@ import { monatVon, monatPlus, zeitraum, isoTag } from './zeit.js';
 import { anteil, monatsZahlen, kategorienAuswertung } from './rechnen.js';
 import { euro } from './geld.js';
 
-export const STANDARD_KATEGORIEN = ['Lebensmittel', 'Drogerie', 'Tanken/Mobilität', 'Kleidung',
+export const STANDARD_KATEGORIEN = ['Lebensmittel', 'Tanken/Mobilität', 'Kleidung',
   'Freizeit', 'Gesundheit', 'Online-Käufe', 'Sonstiges'];
 export const STANDARD_FIX_KATEGORIEN = ['Wohnen', 'Energie', 'Versicherungen', 'Mobilität',
   'Verträge & Abos', 'Kinder', 'Kredite', 'Sonstiges'];

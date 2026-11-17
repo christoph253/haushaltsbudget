@@ -1,8 +1,8 @@
 // Kategorie anhand von Händlernamen/Text raten. Zuerst zählt, was Diana früher gewählt hat.
 
 const AUSGABE_REGELN = [
-  ['Lebensmittel', /rewe|edeka|aldi|lidl|penny|netto|kaufland|norma|globus|tegut|real\b|marktkauf|famila|nahkauf|bäcker|baecker|metzger|backwerk|supermarkt|hit markt|denns|alnatura|bio company/i],
-  ['Drogerie', /\bdm\b|dm-drogerie|dm drogerie|rossmann|m[uü]ller drog|budni|drogerie/i],
+  // Drogerie (dm, Rossmann …) zählt bewusst zu Lebensmitteln
+  ['Lebensmittel', /rewe|edeka|e center|aldi|lidl|penny|netto|kaufland|norma|globus|tegut|real\b|marktkauf|famila|nahkauf|bäcker|baecker|backerei|metzger|backwerk|backstube|supermarkt|hit markt|denns|alnatura|bio company|bio insel|bio\+meer|reformhaus|\bdm\b|dm-drogerie|dm drogerie|rossmann|m[uü]ller drog|budni|drogerie/i],
   ['Tanken/Mobilität', /aral|shell|esso|\bjet\b|total ?energies|tankstelle|agip|avia|star tank|\bomv\b|db vertrieb|deutsche bahn|bahn\.de|\bdb\b|flixbus|\bmvv\b|\bhvv\b|\bbvg\b|\bvrr\b|parken|parkhaus|uber|tier |lime |bolt/i],
   ['Kleidung', /h&m|h & m|c&a|c & a|primark|deichmann|zara|kik\b|takko|ernsting|tk maxx|peek|snipes|about you|bonprix|esprit|s\.oliver|new yorker/i],
   ['Gesundheit', /apotheke|arzt|praxis|optik|fielmann|apollo|sanit|physio|zahn/i],
