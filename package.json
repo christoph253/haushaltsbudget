@@ -1,0 +1,10 @@
+{
+  "name": "haushaltsbudget",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Haushaltsbudget als PWA – alle Daten bleiben auf dem Gerät.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}
