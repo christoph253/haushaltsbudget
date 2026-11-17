@@ -30,7 +30,7 @@ export function berichtDaten(md, { erstellt = Date.now() } = {}) {
         art: ARTEN[b.art], quelle: QUELLEN[b.quelle] || b.quelle,
         betrag: b.art === 'ausgabe' ? -b.betrag : b.betrag, storniert: b.status === 'storniert', bildId: b.bildId, id: b.id,
       })),
-    fixkosten: md.stamm.fixkosten.map((f) => [f.name, f.kategorie, rhythmusName(f.rhythmus), f.betrag, f.anteil]),
+    fixkosten: [...md.stamm.fixkosten].sort((a, b) => b.anteil - a.anteil).map((f) => [f.name, f.kategorie, rhythmusName(f.rhythmus), f.betrag, f.anteil]),
     fixSumme: md.stamm.fixkosten.reduce((s, f) => s + f.anteil, 0),
     einnahmen: md.stamm.einnahmen.map((e) => [e.name, e.betrag]),
     sparbetrag: md.stamm.sparbetrag,

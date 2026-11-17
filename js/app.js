@@ -25,7 +25,7 @@ async function zeichne() {
   const [pfad, query] = (location.hash.slice(1) || '/').split('?');
   const params = new URLSearchParams(query || '');
   const teile = pfad.split('/').filter(Boolean);
-  if (!K.einst.eingerichtet && teile[0] !== 'einrichtung' && !(teile[0] === 'mehr' && teile[1] === 'import')) {
+  if (!K.einst.eingerichtet && teile[0] !== 'einrichtung' && !(teile[0] === 'mehr' && ['import', 'sicherung'].includes(teile[1]))) {
     location.replace('#/einrichtung'); return;
   }
   let seite, tab = 'start';

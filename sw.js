@@ -1,6 +1,6 @@
 // Service Worker: App-Dateien offline verfügbar machen.
 // Bei jeder Änderung an der App VERSION erhöhen, damit iPhones die neue Fassung laden.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const KERN = `kern-${VERSION}`;
 const BIBLIOTHEKEN = 'bibliotheken-v1'; // große Dateien (Texterkennung, PDF) – ändern sich selten
 
@@ -15,8 +15,10 @@ const BIBLIOTHEK_DATEIEN = ['vendor/jspdf.umd.min.js', 'vendor/jspdf.plugin.auto
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
-    await (await caches.open(KERN)).addAll(KERN_DATEIEN);
-    await (await caches.open(BIBLIOTHEKEN)).addAll(BIBLIOTHEK_DATEIEN);
+    // cache: 'reload' – immer frisch vom Server holen, nie aus dem HTTP-Zwischenspeicher
+    const frisch = (liste) => liste.map((u) => new Request(u, { cache: 'reload' }));
+    await (await caches.open(KERN)).addAll(frisch(KERN_DATEIEN));
+    await (await caches.open(BIBLIOTHEKEN)).addAll(frisch(BIBLIOTHEK_DATEIEN));
     await self.skipWaiting();
   })());
 });

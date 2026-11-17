@@ -89,7 +89,7 @@ async function allesLoeschen() {
 
 // ---------------- Einnahmen ----------------
 export async function einnahmenSeite() {
-  const l = await K.daten.liste('einnahmen');
+  const l = (await K.daten.liste('einnahmen')).sort((a, b) => b.betrag - a.betrag);
   const summe = l.filter((x) => x.aktiv).reduce((s, x) => s + x.betrag, 0);
   return h('div', {}, zurueck(), h('h1', {}, 'Einnahmen'),
     h('p', { class: 'leise klein' }, 'Feste monatliche Einnahmen. Einmalige Zusatzeinnahmen erfasst du über den Plus-Knopf.'),
@@ -106,10 +106,10 @@ export async function fixkostenSeite() {
   const monat = await K.daten.aktuellerMonat();
   const aktiv = l.filter((x) => x.aktiv);
   const summe = aktiv.reduce((s, x) => s + anteil(x.betrag, x.rhythmus, monat), 0);
-  const nachRhythmus = RHYTHMEN.map((r) => [r, l.filter((x) => x.rhythmus === r.monate)]).filter(([, xs]) => xs.length);
+  const nachRhythmus = RHYTHMEN.map((r) => [r, l.filter((x) => x.rhythmus === r.monate).sort((a, b) => b.betrag - a.betrag)]).filter(([, xs]) => xs.length);
   return h('div', {}, zurueck(), h('h1', {}, 'Fixkosten'),
     h('p', { class: 'leise klein' }, 'Vierteljährliche, halbjährliche und jährliche Posten werden anteilig auf jeden Monat verteilt.'),
-    h('div', { class: 'karte' }, h('div', { class: 'kopfzeile' }, h('span', {}, 'Summe pro Monat (anteilig)'), h('strong', { class: 'zahl' }, euro(summe)))),
+    h('div', { class: 'karte' }, h('div', { class: 'kopfzeile' }, h('span', {}, 'Summe pro Monat (anteilig)'), h('strong', { class: 'zahl', style: { whiteSpace: 'nowrap' } }, euro(summe)))),
     nachRhythmus.length ? nachRhythmus.map(([r, xs]) => [h('h2', {}, r.name),
       h('div', { class: 'liste' }, xs.map((x) => h('button', { class: `zeile ${x.aktiv ? '' : 'pausiert'}`, onclick: () => stammDialog('fixkosten', x) },
         h('div', { class: 'mitte' }, h('div', { class: 'titel' }, x.name),
@@ -299,10 +299,10 @@ export async function sicherungSeite(params) {
   einlesen.addEventListener('change', async () => {
     const f = einlesen.files[0]; if (!f) return;
     if (!(await bestaetigen('Sicherung einspielen?', 'Alle Daten auf diesem iPhone werden durch die Sicherung ersetzt.', { ja: 'Einspielen', gefahr: true }))) { einlesen.value = ''; return; }
-    try { await sicherungEinlesen(K.daten, f); toast('Sicherung eingespielt'); setTimeout(() => location.reload(), 800); }
+    try { await sicherungEinlesen(K.daten, f); toast('Sicherung eingespielt'); setTimeout(() => { location.hash = '#/'; location.reload(); }, 800); }
     catch (e) { toast(e.message || 'Die Datei konnte nicht eingelesen werden.'); }
   });
-  return h('div', {}, zurueck(), h('h1', {}, 'Datensicherung'),
+  return h('div', {}, params.get('von') === 'einrichtung' ? zurueck('#/einrichtung', 'Einrichtung') : zurueck(), h('h1', {}, 'Datensicherung'),
     h('p', { class: 'leise klein' }, 'Deine Daten liegen nur auf diesem iPhone. Sichere sie einmal im Monat in „Dateien“ (iCloud Drive) – dann sind sie auch bei Verlust des iPhones nicht weg.'),
     monat ? [h('h2', {}, `Abschluss ${monatsName(monat)}`), aktion(`PDF-Bericht ${monatsName(monat)}`, () => pdfErstellen(monat, { mitBildern: true }), { vermerk: false })] : null,
     h('h2', {}, 'Sichern'),
@@ -370,7 +370,8 @@ export async function einrichtungSeite() {
         p2('Die Einrichtung dauert etwa 5 Minuten: Einnahmen, Fixkosten und Sparbetrag.')),
       feld('Wann beginnt dein Budgetmonat?', auswahl([[1, 'Am 1. des Monats (Standard)'], ...Array.from({ length: 27 }, (_, i) => [i + 2, `Am ${i + 2}. (z. B. Tag des Gehaltseingangs)`])], tag,
         { onchange: (ev) => { tag = Number(ev.target.value); } })),
-      knoepfe('Los geht’s', async () => { await D.setzeEinstellungen({ startTag: tag }, { protokoll: false }); await K.ladeEinst(); weiter(); })];
+      knoepfe('Los geht’s', async () => { await D.setzeEinstellungen({ startTag: tag }, { protokoll: false }); await K.ladeEinst(); weiter(); }),
+      h('a', { class: 'knopf grau', href: '#/mehr/sicherung?von=einrichtung', style: { marginTop: '10px' } }, 'Einrichtungs- oder Sicherungsdatei einspielen')];
   } else if (schritt === 1) {
     inhalt = [h('h1', {}, 'Einnahmen'), p2('Trage deine festen monatlichen Einnahmen ein, z. B. Gehalt, Kindergeld, Unterhalt.'),
       h('div', { class: 'liste' }, ein.length ? ein.map((x) => h('button', { class: 'zeile', onclick: () => stammDialog('einnahmen', x, { nachher }) },

@@ -210,7 +210,7 @@ export async function monatSeite(key) {
     h('h2', {}, `Buchungen (${md.buchungen.length})`),
     h('div', { class: 'liste' }, md.buchungen.length ? md.buchungen.map((b) => buchungsZeile(b)) : h('div', { class: 'leer' }, 'Keine Buchungen.')),
     h('h2', {}, 'Fixkosten'),
-    h('div', { class: 'liste' }, md.stamm.fixkosten.length ? md.stamm.fixkosten.map((f) => h('div', { class: 'zeile' },
+    h('div', { class: 'liste' }, md.stamm.fixkosten.length ? [...md.stamm.fixkosten].sort((a, b) => b.anteil - a.anteil).map((f) => h('div', { class: 'zeile' },
       h('div', { class: 'mitte' }, h('div', { class: 'titel' }, f.name), h('div', { class: 'unter' }, `${f.kategorie} · ${rhythmusName(f.rhythmus)} ${euro(f.betrag)}`)),
       h('div', { class: 'rechts' }, euro(f.anteil)))) : h('div', { class: 'leer' }, 'Keine Fixkosten.')),
     h('h2', {}, 'Einnahmequellen'),
