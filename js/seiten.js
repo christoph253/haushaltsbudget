@@ -7,6 +7,7 @@ import { warnStufe, restProTag, rhythmusName } from './rechnen.js';
 import { buchungsZeile, belegErfassen, buchungsformular } from './buchen.js';
 import { berichtDaten, erzeugePdf } from './bericht.js';
 import { teilen, blobZuDataUrl } from './sicherung.js';
+import { stammDialog, sparbetragDialog } from './einstellungen.js';
 
 function kategorieBalken(kategorien) {
   const max = Math.max(1, ...kategorien.map((k) => k.netto));
@@ -15,8 +16,76 @@ function kategorieBalken(kategorien) {
     h('div', { class: 'balken' }, h('div', { style: { width: `${Math.max(0, (k.netto / max) * 100)}%` } }))));
 }
 
-function kachel(l, w, unter) {
-  return h('div', { class: 'kachel' }, h('div', { class: 'l' }, l), h('div', { class: 'w zahl' }, w), unter ? h('div', { class: 'l' }, unter) : null);
+function kachel(l, w, unter, onclick) {
+  return h(onclick ? 'button' : 'div', { class: `kachel ${onclick ? 'tippbar' : ''}`, onclick, 'aria-label': onclick ? `${l} anzeigen` : null },
+    h('div', { class: 'l' }, l), h('div', { class: 'w zahl' }, w), unter ? h('div', { class: 'l' }, unter) : null);
+}
+
+// ---------------- Detailansichten der Kacheln ----------------
+const summenZeile = (text, betrag) => h('div', { class: 'zeile' }, h('div', { class: 'mitte' }, h('strong', {}, text)),
+  h('div', { class: 'rechts' }, h('strong', {}, euro(betrag))));
+
+function postenZeile(titel, unter, betrag, onclick, rechtsUnter) {
+  return h(onclick ? 'button' : 'div', { class: `zeile ${onclick ? 'pfeil' : ''}`, onclick },
+    h('div', { class: 'mitte' }, h('div', { class: 'titel' }, titel), unter ? h('div', { class: 'unter' }, unter) : null),
+    h('div', { class: 'rechts' }, euro(betrag), rechtsUnter ? h('div', { class: 'unter' }, rechtsUnter) : null));
+}
+
+async function stammObjekt(store, id) { return K.daten.s.get(store, id); }
+
+function einnahmenDetail(md) {
+  const zusatz = md.aktive.filter((b) => b.art === 'zusatzeinnahme');
+  const einnahmen = [...md.stamm.einnahmen].sort((a, b) => b.betrag - a.betrag);
+  sheet(`Einnahmen ${monatsName(md.key)}`, (zu) => h('div', {},
+    h('h2', { style: { marginTop: '4px' } }, 'Feste Einnahmen'),
+    h('div', { class: 'liste' }, einnahmen.length ? einnahmen.map((e) => postenZeile(e.name, null, e.betrag,
+      md.abgeschlossen ? null : async () => { zu(true); stammDialog('einnahmen', await stammObjekt('einnahmen', e.id), { nachher: K.neuZeichnen }); }))
+      : h('div', { class: 'leer' }, 'Keine festen Einnahmen eingetragen.'),
+      summenZeile('Summe fest', md.zahlen.festeEinnahmen)),
+    h('h2', {}, 'Zusatzeinnahmen diesen Monat'),
+    h('div', { class: 'liste' }, zusatz.length ? zusatz.map((b) => buchungsZeile(b)) : h('div', { class: 'leer' }, 'Keine Zusatzeinnahmen.'),
+      zusatz.length ? summenZeile('Summe zusätzlich', md.zahlen.zusatz) : null),
+    h('div', { class: 'liste' }, summenZeile('Einnahmen gesamt', md.zahlen.einnahmen)),
+    md.abgeschlossen ? null : h('div', { style: { display: 'grid', gap: '10px' } },
+      h('button', { class: 'knopf zweit', onclick: () => { zu(true); buchungsformular({ art: 'zusatzeinnahme', titel: 'Zusatzeinnahme' }); } }, 'Zusatzeinnahme erfassen'),
+      h('a', { class: 'knopf grau', href: '#/mehr/einnahmen' }, 'Feste Einnahmen verwalten'))));
+}
+
+function fixkostenDetail(md) {
+  const gruppen = [[1, 'Monatlich'], [3, 'Vierteljährlich (anteilig)'], [6, 'Halbjährlich (anteilig)'], [12, 'Jährlich (anteilig)']]
+    .map(([r, t]) => [t, md.stamm.fixkosten.filter((f) => (f.rhythmus || 1) === r).sort((a, b) => b.anteil - a.anteil)])
+    .filter(([, l]) => l.length);
+  sheet(`Fixkosten ${monatsName(md.key)}`, (zu) => h('div', {},
+    h('p', { class: 'leise klein' }, 'Nicht-monatliche Posten werden anteilig auf jeden Monat verteilt. Tippe auf einen Posten, um ihn zu ändern.'),
+    gruppen.length ? gruppen.map(([t, l]) => [h('h2', {}, t), h('div', { class: 'liste' }, l.map((f) => postenZeile(f.name,
+      f.rhythmus > 1 ? `${f.kategorie} · ${euro(f.betrag)} ${rhythmusName(f.rhythmus)}` : f.kategorie, f.anteil,
+      md.abgeschlossen ? null : async () => { zu(true); stammDialog('fixkosten', await stammObjekt('fixkosten', f.id), { nachher: K.neuZeichnen }); },
+      f.rhythmus > 1 ? 'pro Monat' : null)))]) : h('div', { class: 'liste' }, h('div', { class: 'leer' }, 'Keine Fixkosten eingetragen.')),
+    h('div', { class: 'liste' }, summenZeile('Fixkosten pro Monat', md.zahlen.fix)),
+    md.abgeschlossen ? null : h('a', { class: 'knopf grau', href: '#/mehr/fixkosten' }, 'Fixkosten verwalten')));
+}
+
+function sparbetragDetail(md) {
+  sheet('Sparbetrag', (zu) => h('div', {},
+    h('div', { class: 'karte held' }, h('div', { class: 'label' }, 'Jeden Monat zur Seite gelegt'), h('div', { class: 'betrag zahl' }, euro(md.zahlen.spar))),
+    h('p', { class: 'leise klein' }, 'Der Sparbetrag wird wie ein Fixposten abgezogen, bevor das verfügbare Budget berechnet wird.'),
+    h('div', { class: 'liste' },
+      h('div', { class: 'zeile' }, h('div', { class: 'mitte' }, 'Im Jahr'), h('div', { class: 'rechts' }, euro(md.zahlen.spar * 12)))),
+    md.abgeschlossen ? null : h('button', { class: 'knopf', onclick: () => { zu(true); sparbetragDialog(); } }, 'Sparbetrag ändern')));
+}
+
+function ausgabenDetail(md) {
+  const ausgaben = md.aktive.filter((b) => b.art !== 'zusatzeinnahme');
+  sheet(`Variable Ausgaben ${monatsName(md.key)}`, (zu) => h('div', {},
+    h('div', { class: 'liste' },
+      h('div', { class: 'zeile' }, h('div', { class: 'mitte' }, 'Ausgaben'), h('div', { class: 'rechts' }, euro(md.zahlen.ausgaben))),
+      md.zahlen.erstattungen ? h('div', { class: 'zeile' }, h('div', { class: 'mitte' }, 'Erstattungen'), h('div', { class: 'rechts gruen' }, `− ${euro(md.zahlen.erstattungen)}`)) : null,
+      summenZeile('Verbraucht', md.zahlen.verbraucht),
+      h('div', { class: 'zeile' }, h('div', { class: 'mitte leise' }, 'Budget für variable Ausgaben'), h('div', { class: 'rechts leise' }, euro(md.zahlen.variablesBudget)))),
+    md.kategorien.length ? [h('h2', {}, 'Nach Kategorie'), h('div', { class: 'karte' }, kategorieBalken(md.kategorien))] : null,
+    h('h2', {}, `Alle Buchungen (${ausgaben.length})`),
+    h('div', { class: 'liste' }, ausgaben.length ? ausgaben.map((b) => buchungsZeile(b)) : h('div', { class: 'leer' }, 'Noch keine Ausgaben in diesem Monat.')),
+    md.abgeschlossen ? null : h('button', { class: 'knopf zweit', onclick: () => { zu(true); buchungsformular({ art: 'ausgabe' }); } }, 'Ausgabe erfassen')));
 }
 
 // ---------------- Start ----------------
@@ -64,10 +133,10 @@ export async function startSeite() {
       h('button', { class: 'knopf', onclick: belegErfassen }, icon('kamera'), 'Beleg erfassen'),
       h('button', { class: 'knopf zweit', onclick: () => buchungsformular({ art: 'ausgabe' }) }, icon('stift'), 'Ausgabe')),
     h('div', { class: 'raster' },
-      kachel('Einnahmen', euro(z.einnahmen), z.zusatz ? `inkl. ${euro(z.zusatz)} zusätzlich` : null),
-      kachel('Fixkosten', euro(z.fix), 'anteilig pro Monat'),
-      kachel('Sparbetrag', euro(z.spar)),
-      kachel('Variable Ausgaben', euro(z.ausgaben), z.erstattungen ? `− ${euro(z.erstattungen)} Erstattungen` : null)),
+      kachel('Einnahmen', euro(z.einnahmen), z.zusatz ? `inkl. ${euro(z.zusatz)} zusätzlich` : `${md.stamm.einnahmen.length} Quellen`, () => einnahmenDetail(md)),
+      kachel('Fixkosten', euro(z.fix), `${md.stamm.fixkosten.length} Posten, anteilig`, () => fixkostenDetail(md)),
+      kachel('Sparbetrag', euro(z.spar), 'pro Monat', () => sparbetragDetail(md)),
+      kachel('Variable Ausgaben', euro(z.ausgaben), z.erstattungen ? `− ${euro(z.erstattungen)} Erstattungen` : `${md.aktive.filter((b) => b.art === 'ausgabe').length} Buchungen`, () => ausgabenDetail(md))),
     md.kategorien.length ? h('div', {}, h('h2', {}, 'Nach Kategorie'), h('div', { class: 'karte' }, kategorieBalken(md.kategorien))) : null,
     h('h2', {}, 'Letzte Buchungen'),
     h('div', { class: 'liste' }, md.aktive.length ? md.aktive.slice(0, 6).map((b) => buchungsZeile(b))

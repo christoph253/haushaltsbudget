@@ -73,6 +73,9 @@ p { margin: 6px 0; }
 .kachel { background: var(--karte); border-radius: 14px; padding: 12px 14px; box-shadow: var(--schatten); }
 .kachel .l { font-size: 13px; color: var(--leise); }
 .kachel .w { font-size: 19px; font-weight: 600; }
+button.kachel { border: 0; text-align: left; width: 100%; color: inherit; font: inherit; cursor: pointer; position: relative; }
+button.kachel::after { content: "›"; position: absolute; right: 12px; top: 8px; color: var(--leise); font-size: 22px; }
+button.kachel:active { transform: scale(.98); background: var(--linie); }
 .schnell { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 
 .hinweis { border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; display: flex; gap: 10px; align-items: flex-start; }

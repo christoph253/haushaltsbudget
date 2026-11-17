@@ -45,7 +45,7 @@ export async function mehrSeite() {
     h('p', { class: 'leise klein', style: { textAlign: 'center', marginTop: '20px' } }, 'Alle Daten liegen nur auf diesem iPhone.'));
 }
 
-function sparbetragDialog() {
+export function sparbetragDialog() {
   const inp = betragsFeld(zahl(K.einst.sparbetrag));
   sheet('Sparbetrag', (zu) => h('div', {},
     h('p', { class: 'leise klein' }, 'Wird jeden Monat wie ein Fixposten abgezogen, bevor das verfügbare Budget berechnet wird.'),
@@ -127,7 +127,7 @@ export function stammDialog(store, obj = null, { nachher } = {}) {
   const z = { name: '', betrag: '', kategorie: K.einst.fixKategorien[0], rhythmus: 1, aktiv: true, faelligMonat: null, ...(obj || {}) };
   const name = h('input', { class: 'eingabe', value: z.name, placeholder: fix ? 'z. B. Miete' : 'z. B. Gehalt' });
   const betrag = betragsFeld(obj ? zahl(z.betrag) : '');
-  const s = sheet(obj ? (fix ? 'Fixkosten bearbeiten' : 'Einnahme bearbeiten') : (fix ? 'Neue Fixkosten' : 'Neue Einnahme'), () => aufbau());
+  const s = sheet(obj ? (fix ? 'Fixkosten bearbeiten' : 'Einnahme bearbeiten') : (fix ? 'Neue Fixkosten' : 'Neue Einnahme'), h('div'));
   const anteilText = h('p', { class: 'leise klein' });
   const aktualisiere = () => {
     const b = parseEuro(betrag.value);

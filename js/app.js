@@ -82,6 +82,8 @@ start().catch((e) => {
     h('p', {}, 'Bitte Safari nicht im privaten Modus verwenden.'), h('p', { class: 'leise klein' }, String(e.message || e))));
 });
 
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+// Lokal (Vorschau beim Entwickeln) ohne Service Worker, damit Änderungen sofort sichtbar sind
+const lokal = ['localhost', '127.0.0.1'].includes(location.hostname);
+if ('serviceWorker' in navigator && location.protocol !== 'file:' && !lokal) {
   navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Service Worker', e));
 }

@@ -1,6 +1,6 @@
 // Service Worker: App-Dateien offline verfügbar machen.
 // Bei jeder Änderung an der App VERSION erhöhen, damit iPhones die neue Fassung laden.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const KERN = `kern-${VERSION}`;
 const BIBLIOTHEKEN = 'bibliotheken-v1'; // große Dateien (Texterkennung, PDF) – ändern sich selten
 
